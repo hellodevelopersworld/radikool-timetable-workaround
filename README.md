@@ -46,6 +46,7 @@ https://www.telerik.com/fiddler
 初回起動時に、以下のダイアログが出る。
 
 ![AppContainer](./images/AppContainer.png)
+
 Cancelを選択する。
 
 #### HTTPSの復号を有効にする
