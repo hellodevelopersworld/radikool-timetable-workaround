@@ -79,6 +79,7 @@ OnBeforeRequest関数に移動する。"Go to"の中から選んでもよい。
 また、OnBeforeRequestの前にIsRadikoolProgramRequest関数を追加する。
 
 ```
+    // ここから
     // Radikoolの番組表リクエストかどうかを判定する関数
     static function IsRadikoolProgramRequest(oSession: Session): boolean {
         if (oSession == null) return false;
@@ -91,6 +92,7 @@ OnBeforeRequest関数に移動する。"Go to"の中から選んでもよい。
 
         return isRadiko && isRadikoolProcess && isProgramPath;
     }
+    // ここまで
 
     static function OnBeforeRequest(oSession: Session) {
         // ここから
