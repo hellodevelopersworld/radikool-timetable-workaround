@@ -74,10 +74,36 @@ Yesを選択する。Yesにしないと復号できないため。以下、同�
 
 Windowsで動作している他のアプリの通信に影響を与えないようにするため、Fiddler Scriptにコードを追加して、Radikoolの番組表取得の通信だけに介在するように手を加える。
 アプリの上の方に並んでいるボタンの中から、"FiddlerScript"を押す。Scriptが表示される。
-OnBeforeResponse関数に移動する。"Go to"の中から選んでもよい。
-以下のコードの"ここから"、"ここまで"のコードをOnBeforeResponseにコピペする。
+OnBeforeRequest関数に移動する。"Go to"の中から選んでもよい。
+以下のコードの"ここから"、"ここまで"のコードをOnBeforeResponseにコピペする。OnBeforeResponse関数も同様にする。
+また、OnBeforeRequestの前にIsRadikoolProgramRequest関数を追加する。
 
 ```
+    // Radikoolの番組表リクエストかどうかを判定する関数
+    static function IsRadikoolProgramRequest(oSession: Session): boolean {
+        if (oSession == null) return false;
+
+        // 大小文字を区別しない安全な判定処理
+        var isRadiko = oSession.HostnameIs("radiko.jp");
+        var isRadikoolProcess = (oSession.LocalProcess != null && 
+                                oSession.LocalProcess.ToLower().Contains("radikool"));
+        var isProgramPath = oSession.PathAndQuery.ToLower().Contains("program");
+
+        return isRadiko && isRadikoolProcess && isProgramPath;
+    }
+
+    static function OnBeforeRequest(oSession: Session) {
+        // ここから
+        // radikoへのリクエストの場合、レスポンス全体をバッファリングする
+        if (IsRadikoolProgramRequest(oSession)) {
+            FiddlerApplication.Log.LogString("★[Radikool延命] radikoolによるradiko番組表取得のリクエストです。" + oSession.url);
+            oSession.bBufferResponse = true;
+        }
+        // ここまで
+
+        // （以下、既存のOnBeforeRequestのコード）
+    }
+
     static function OnBeforeResponse(oSession: Session) {
         if (m_Hide304s && oSession.responseCode == 304) {
             oSession["ui-hide"] = "true";
@@ -110,6 +136,10 @@ OnBeforeResponse関数に移動する。"Go to"の中から選んでもよい。
 	            
                     // 正常に解凍できたら緑の太字にする
                     if (bResult) {
+                        // 【追加】ヘッダーからContent-Encoding を確実に削除して平文であることを明示する
+                        oSession.oResponse.headers.Remove("Content-Encoding");
+                        // 解凍後のサイズに合わせて Content-Length を再計算・更新(以下の1行はたぶん不要)
+                        // oSession.oResponse.headers.Remove("Content-Length");
                         FiddlerApplication.Log.LogString("★[Radikool延命] gzip圧縮されたレスポンスを自動解凍しました。URL: " + oSession.url);
                         oSession["ui-color"] = "green";
                         oSession["ui-bold"] = "true";
